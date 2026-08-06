@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: escala-facil-postgres
+    environment:
+      POSTGRES_DB: escala_facil
+      POSTGRES_USER: escala_user
+      POSTGRES_PASSWORD: escala_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - escala_facil_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U escala_user -d escala_facil"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  escala_facil_data:

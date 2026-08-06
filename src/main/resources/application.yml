@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: escala-facil-bombeiros
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/escala_facil}
+    username: ${DB_USERNAME:escala_user}
+    password: ${DB_PASSWORD:escala_password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
