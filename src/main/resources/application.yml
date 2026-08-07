@@ -1,19 +1,22 @@
 spring:
   application:
     name: escala-facil-bombeiros
+
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/escala_facil}
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5434/escala_facil}
     username: ${DB_USERNAME:escala_user}
-    password: ${DB_PASSWORD:escala_password}
+    password: ${DB_PASSWORD}
+
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+
   flyway:
     enabled: true
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8082}
   servlet:
     context-path: /api
 
