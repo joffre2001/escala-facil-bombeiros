@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run EscalaFacilApplication",
+      "request": "launch",
+      "mainClass": "com.obysoft.escalafacil.EscalaFacilApplication",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}

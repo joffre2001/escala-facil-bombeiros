@@ -1,4 +1,8 @@
 spring:
+
+  config:
+    import: optional:file:.env[.properties]
+
   application:
     name: escala-facil-bombeiros
 
@@ -7,19 +11,20 @@ spring:
     username: ${DB_USERNAME:escala_user}
     password: ${DB_PASSWORD}
 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-
-  flyway:
-    enabled: true
-
 server:
-  port: ${SERVER_PORT:8082}
+  port: 8082
   servlet:
     context-path: /api
 
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+app:
+  jwt:
+    secret: "RXNjYWxhRmFjaWxCb21iZWlyb3NTZWdyZWRvMjAyNlNlZ3Vybw=="
+    expiration: 28800000
+  admin:
+    nome: ${ADMIN_NAME:Administrador}
+    email: ${ADMIN_EMAIL:}
+    senha: ${ADMIN_PASSWORD:}

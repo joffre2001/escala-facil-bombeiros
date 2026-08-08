@@ -1,0 +1,220 @@
+#root {
+  min-height: 100vh;
+}
+
+.login-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.brand-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: white;
+  background:
+    linear-gradient(rgba(112, 20, 12, 0.92), rgba(55, 9, 7, 0.96)),
+    linear-gradient(135deg, #b42a1c, #53110b);
+}
+
+.brand-content {
+  max-width: 480px;
+}
+
+.brand-icon,
+.mobile-logo {
+  font-size: 50px;
+}
+
+.brand-content h1 {
+  margin: 22px 0 0;
+  font-size: 52px;
+  line-height: 1;
+}
+
+.brand-content h2 {
+  margin: 10px 0 24px;
+  color: #ffb5a9;
+  font-size: 30px;
+}
+
+.brand-content p {
+  max-width: 410px;
+  color: #f8dbd6;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: #f4f6f8;
+}
+
+.login-card,
+.success-card {
+  width: min(100%, 420px);
+  padding: 42px;
+  border: 1px solid #e2e6ea;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 16px 45px rgba(26, 33, 45, 0.1);
+}
+
+.mobile-logo {
+  display: none;
+}
+
+.login-card header {
+  margin-bottom: 30px;
+}
+
+.login-card header span {
+  color: #b52b1d;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.login-card h2 {
+  margin: 7px 0;
+  color: #202630;
+  font-size: 32px;
+}
+
+.login-card header p {
+  margin: 0;
+  color: #6d7480;
+}
+
+.login-card label {
+  display: block;
+  margin: 18px 0 7px;
+  color: #343a44;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.login-card input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ccd2d9;
+  border-radius: 9px;
+  outline: none;
+  background: #fbfcfd;
+  color: #202630;
+  font: inherit;
+  transition: 0.2s;
+}
+
+.login-card input:focus {
+  border-color: #b52b1d;
+  box-shadow: 0 0 0 3px rgba(181, 43, 29, 0.12);
+}
+
+.login-button,
+.success-card button {
+  width: 100%;
+  margin-top: 24px;
+  padding: 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #a9281c;
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.login-button:hover,
+.success-card button:hover {
+  background: #861d14;
+}
+
+.login-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.error-message {
+  margin-top: 16px;
+  padding: 11px;
+  border-radius: 8px;
+  background: #fff0ee;
+  color: #a11d13;
+  font-size: 14px;
+}
+
+.login-card small {
+  display: block;
+  margin-top: 22px;
+  color: #8a9099;
+  text-align: center;
+}
+
+.success-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: #f4f6f8;
+}
+
+.success-card {
+  text-align: center;
+}
+
+.success-icon {
+  display: grid;
+  width: 70px;
+  height: 70px;
+  margin: auto;
+  border-radius: 50%;
+  place-items: center;
+  background: #e7f8ec;
+  color: #238443;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.success-card h1 {
+  color: #202630;
+}
+
+.success-card p {
+  color: #626a75;
+}
+
+.profile {
+  font-weight: 700;
+}
+
+@media (max-width: 780px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-panel {
+    display: none;
+  }
+
+  .form-panel {
+    padding: 20px;
+  }
+
+  .login-card {
+    padding: 32px 25px;
+  }
+
+  .mobile-logo {
+    display: block;
+    margin-bottom: 20px;
+  }
+}
