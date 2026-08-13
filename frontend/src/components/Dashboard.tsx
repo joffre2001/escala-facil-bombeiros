@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import api from "../api/api";
 import Bombeiros, { type Bombeiro } from "./Bombeiros";
 import BombeiroFormulario from "./BombeiroFormulario";
+import Indisponibilidades, {
+  type Indisponibilidade,
+} from "./Indisponibilidades";
+import IndisponibilidadeFormulario from "./IndisponibilidadeFormulario";
 import "./Dashboard.css";
 
 interface UsuarioLogado {
@@ -20,6 +24,7 @@ type TelaAtiva =
   | "bombeiros"
   | "formulario-bombeiro"
   | "indisponibilidades"
+  | "formulario-indisponibilidade"
   | "escalas";
 
 function Dashboard({ usuario, aoSair }: DashboardProps) {
@@ -28,6 +33,11 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
   const [bombeiroSelecionado, setBombeiroSelecionado] =
     useState<Bombeiro | null>(null);
+
+  const [
+    indisponibilidadeSelecionada,
+    setIndisponibilidadeSelecionada,
+  ] = useState<Indisponibilidade | null>(null);
 
   const [totalBombeiros, setTotalBombeiros] = useState(0);
 
@@ -80,21 +90,25 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
   function abrirDashboard() {
     setBombeiroSelecionado(null);
+    setIndisponibilidadeSelecionada(null);
     setTelaAtiva("dashboard");
   }
 
   function abrirListaBombeiros() {
     setBombeiroSelecionado(null);
+    setIndisponibilidadeSelecionada(null);
     setTelaAtiva("bombeiros");
   }
 
   function abrirCadastroBombeiro() {
     setBombeiroSelecionado(null);
+    setIndisponibilidadeSelecionada(null);
     setTelaAtiva("formulario-bombeiro");
   }
 
   function abrirEdicaoBombeiro(bombeiro: Bombeiro) {
     setBombeiroSelecionado(bombeiro);
+    setIndisponibilidadeSelecionada(null);
     setTelaAtiva("formulario-bombeiro");
   }
 
@@ -110,9 +124,39 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
     setTelaAtiva("bombeiros");
   }
 
+  function abrirListaIndisponibilidades() {
+    setBombeiroSelecionado(null);
+    setIndisponibilidadeSelecionada(null);
+    setTelaAtiva("indisponibilidades");
+  }
+
+  function abrirCadastroIndisponibilidade() {
+    setBombeiroSelecionado(null);
+    setIndisponibilidadeSelecionada(null);
+    setTelaAtiva("formulario-indisponibilidade");
+  }
+
+  function abrirEdicaoIndisponibilidade(
+    indisponibilidade: Indisponibilidade
+  ) {
+    setBombeiroSelecionado(null);
+    setIndisponibilidadeSelecionada(indisponibilidade);
+    setTelaAtiva("formulario-indisponibilidade");
+  }
+
+  async function concluirFormularioIndisponibilidade() {
+    setIndisponibilidadeSelecionada(null);
+    setTelaAtiva("indisponibilidades");
+    await carregarResumo();
+  }
+
   const menuBombeirosAtivo =
     telaAtiva === "bombeiros" ||
     telaAtiva === "formulario-bombeiro";
+
+  const menuIndisponibilidadesAtivo =
+    telaAtiva === "indisponibilidades" ||
+    telaAtiva === "formulario-indisponibilidade";
 
   return (
     <div className="dashboard-layout">
@@ -151,14 +195,10 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
           <button
             className={`menu-item ${
-              telaAtiva === "indisponibilidades"
-                ? "active"
-                : ""
+              menuIndisponibilidadesAtivo ? "active" : ""
             }`}
             type="button"
-            onClick={() =>
-              setTelaAtiva("indisponibilidades")
-            }
+            onClick={abrirListaIndisponibilidades}
           >
             <span>!</span>
             Indisponibilidades
@@ -210,18 +250,18 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
             aoCadastrar={abrirCadastroBombeiro}
             aoEditar={abrirEdicaoBombeiro}
           />
+        ) : telaAtiva === "formulario-indisponibilidade" ? (
+          <IndisponibilidadeFormulario
+            indisponibilidade={indisponibilidadeSelecionada}
+            aoCancelar={abrirListaIndisponibilidades}
+            aoSalvar={concluirFormularioIndisponibilidade}
+          />
         ) : telaAtiva === "indisponibilidades" ? (
-          <section>
-            <span className="page-label">
-              GESTÃO DE DISPONIBILIDADE
-            </span>
-
-            <h1>Indisponibilidades</h1>
-
-            <p>
-              Esta tela será criada na próxima etapa.
-            </p>
-          </section>
+          <Indisponibilidades
+            aoCadastrar={abrirCadastroIndisponibilidade}
+            aoEditar={abrirEdicaoIndisponibilidade}
+            aoAlterar={carregarResumo}
+          />
         ) : telaAtiva === "escalas" ? (
           <section>
             <span className="page-label">
@@ -335,9 +375,7 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setTelaAtiva("indisponibilidades")
-                  }
+                  onClick={abrirCadastroIndisponibilidade}
                 >
                   <span>!</span>
 

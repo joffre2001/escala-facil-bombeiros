@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.obysoft.escalafacil.entity.Indisponibilidade;
 
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotNull;
+
 public interface IndisponibilidadeRepository
         extends JpaRepository<Indisponibilidade, Long> {
 
@@ -25,4 +28,7 @@ public interface IndisponibilidadeRepository
             LocalDate dataInicio,
             Long id
     );
+
+    List<Indisponibilidade> findByDataInicioLessThanEqualAndDataFimGreaterThanEqual(LocalDate dataFim,
+                LocalDate dataInicio);
 }

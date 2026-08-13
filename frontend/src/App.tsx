@@ -18,7 +18,21 @@ function App() {
   const [senha, setSenha] = useState("Admin@123");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const [usuario, setUsuario] = useState<LoginResponse | null>(null);
+  const [usuario, setUsuario] = useState<LoginResponse | null>(() => {
+    const usuarioSalvo = localStorage.getItem("usuario");
+
+    if (!usuarioSalvo) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(usuarioSalvo) as LoginResponse;
+    } catch {
+      localStorage.removeItem("usuario");
+      localStorage.removeItem("token");
+      return null;
+    }
+  });
 
   async function realizarLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,8 +62,8 @@ function App() {
   }
 
   if (usuario) {
-  return <Dashboard usuario={usuario} aoSair={sair} />;
-}
+    return <Dashboard usuario={usuario} aoSair={sair} />;
+  }
 
   return (
     <main className="login-page">
