@@ -1,0 +1,103 @@
+.gerar-page {
+  display: grid;
+  gap: 24px;
+  max-width: 780px;
+}
+
+.gerar-page h1 {
+  margin: 6px 0;
+  color: #15212f;
+  font-size: 32px;
+}
+
+.gerar-page header p {
+  margin: 0;
+  color: #687382;
+}
+
+.gerar-card {
+  display: grid;
+  gap: 20px;
+  padding: 26px;
+  background: #ffffff;
+  border: 1px solid #e3e8ee;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px
+    rgba(28, 42, 58, 0.05);
+}
+
+.gerar-card label {
+  display: grid;
+  gap: 8px;
+  color: #253344;
+  font-weight: 700;
+}
+
+.gerar-card input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 13px;
+  color: #172536;
+  font: inherit;
+  border: 1px solid #ccd4dd;
+  border-radius: 9px;
+}
+
+.gerar-card input:focus {
+  border-color: #e14b3b;
+  outline: 3px solid
+    rgba(225, 75, 59, 0.13);
+}
+
+.gerar-card small {
+  color: #74808e;
+  font-weight: 400;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-feedback {
+  padding: 13px;
+  background: #fff0ee;
+  color: #a52e26;
+  border-radius: 9px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 5px;
+}
+
+.secondary {
+  padding: 12px 18px;
+  background: #ffffff;
+  color: #354253;
+  font-weight: 700;
+  border: 1px solid #ccd4dd;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gerar-card {
+    padding: 18px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}

@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 import api from "../api/api";
-import Bombeiros, { type Bombeiro } from "./Bombeiros";
+
+import Bombeiros, {
+  type Bombeiro,
+} from "./Bombeiros";
+
 import BombeiroFormulario from "./BombeiroFormulario";
+
 import Indisponibilidades, {
   type Indisponibilidade,
 } from "./Indisponibilidades";
+
 import IndisponibilidadeFormulario from "./IndisponibilidadeFormulario";
+
+import Escalas from "./Escalas";
+import GerarEscalaFormulario from "./GerarEscalaFormulario";
+
 import "./Dashboard.css";
 
 interface UsuarioLogado {
@@ -25,28 +35,40 @@ type TelaAtiva =
   | "formulario-bombeiro"
   | "indisponibilidades"
   | "formulario-indisponibilidade"
-  | "escalas";
+  | "escalas"
+  | "gerar-escala";
 
-function Dashboard({ usuario, aoSair }: DashboardProps) {
+function Dashboard({
+  usuario,
+  aoSair,
+}: DashboardProps) {
   const [telaAtiva, setTelaAtiva] =
     useState<TelaAtiva>("dashboard");
 
-  const [bombeiroSelecionado, setBombeiroSelecionado] =
-    useState<Bombeiro | null>(null);
+  const [
+    bombeiroSelecionado,
+    setBombeiroSelecionado,
+  ] = useState<Bombeiro | null>(null);
 
   const [
     indisponibilidadeSelecionada,
     setIndisponibilidadeSelecionada,
   ] = useState<Indisponibilidade | null>(null);
 
-  const [totalBombeiros, setTotalBombeiros] = useState(0);
+  const [totalBombeiros, setTotalBombeiros] =
+    useState(0);
 
   const [
     totalIndisponibilidades,
     setTotalIndisponibilidades,
   ] = useState(0);
 
-  const [carregando, setCarregando] = useState(true);
+  const [totalEscalas, setTotalEscalas] =
+    useState(0);
+
+  const [carregando, setCarregando] =
+    useState(true);
+
   const [erro, setErro] = useState("");
 
   async function carregarResumo() {
@@ -57,22 +79,35 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
       const [
         bombeirosResponse,
         indisponibilidadesResponse,
+        escalasResponse,
       ] = await Promise.all([
         api.get("/firefighters"),
         api.get("/unavailabilities"),
+        api.get("/schedules"),
       ]);
 
       const bombeiros = bombeirosResponse.data;
+
       const indisponibilidades =
         indisponibilidadesResponse.data;
 
+      const escalas = escalasResponse.data;
+
       setTotalBombeiros(
-        Array.isArray(bombeiros) ? bombeiros.length : 0
+        Array.isArray(bombeiros)
+          ? bombeiros.length
+          : 0
       );
 
       setTotalIndisponibilidades(
         Array.isArray(indisponibilidades)
           ? indisponibilidades.length
+          : 0
+      );
+
+      setTotalEscalas(
+        Array.isArray(escalas)
+          ? escalas.length
           : 0
       );
     } catch {
@@ -85,28 +120,32 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
   }
 
   useEffect(() => {
-    carregarResumo();
+    void carregarResumo();
   }, []);
 
-  function abrirDashboard() {
+  function limparSelecoes() {
     setBombeiroSelecionado(null);
     setIndisponibilidadeSelecionada(null);
+  }
+
+  function abrirDashboard() {
+    limparSelecoes();
     setTelaAtiva("dashboard");
   }
 
   function abrirListaBombeiros() {
-    setBombeiroSelecionado(null);
-    setIndisponibilidadeSelecionada(null);
+    limparSelecoes();
     setTelaAtiva("bombeiros");
   }
 
   function abrirCadastroBombeiro() {
-    setBombeiroSelecionado(null);
-    setIndisponibilidadeSelecionada(null);
+    limparSelecoes();
     setTelaAtiva("formulario-bombeiro");
   }
 
-  function abrirEdicaoBombeiro(bombeiro: Bombeiro) {
+  function abrirEdicaoBombeiro(
+    bombeiro: Bombeiro
+  ) {
     setBombeiroSelecionado(bombeiro);
     setIndisponibilidadeSelecionada(null);
     setTelaAtiva("formulario-bombeiro");
@@ -125,28 +164,50 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
   }
 
   function abrirListaIndisponibilidades() {
-    setBombeiroSelecionado(null);
-    setIndisponibilidadeSelecionada(null);
+    limparSelecoes();
     setTelaAtiva("indisponibilidades");
   }
 
   function abrirCadastroIndisponibilidade() {
-    setBombeiroSelecionado(null);
-    setIndisponibilidadeSelecionada(null);
-    setTelaAtiva("formulario-indisponibilidade");
+    limparSelecoes();
+    setTelaAtiva(
+      "formulario-indisponibilidade"
+    );
   }
 
   function abrirEdicaoIndisponibilidade(
     indisponibilidade: Indisponibilidade
   ) {
     setBombeiroSelecionado(null);
-    setIndisponibilidadeSelecionada(indisponibilidade);
-    setTelaAtiva("formulario-indisponibilidade");
+
+    setIndisponibilidadeSelecionada(
+      indisponibilidade
+    );
+
+    setTelaAtiva(
+      "formulario-indisponibilidade"
+    );
   }
 
   async function concluirFormularioIndisponibilidade() {
     setIndisponibilidadeSelecionada(null);
     setTelaAtiva("indisponibilidades");
+
+    await carregarResumo();
+  }
+
+  function abrirEscalas() {
+    limparSelecoes();
+    setTelaAtiva("escalas");
+  }
+
+  function abrirGerarEscala() {
+    limparSelecoes();
+    setTelaAtiva("gerar-escala");
+  }
+
+  async function concluirGeracaoEscala() {
+    setTelaAtiva("escalas");
     await carregarResumo();
   }
 
@@ -156,13 +217,20 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
   const menuIndisponibilidadesAtivo =
     telaAtiva === "indisponibilidades" ||
-    telaAtiva === "formulario-indisponibilidade";
+    telaAtiva ===
+      "formulario-indisponibilidade";
+
+  const menuEscalasAtivo =
+    telaAtiva === "escalas" ||
+    telaAtiva === "gerar-escala";
 
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <div className="sidebar-logo">🔥</div>
+          <div className="sidebar-logo">
+            🔥
+          </div>
 
           <div>
             <strong>EscalaFácil</strong>
@@ -173,7 +241,9 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
         <nav className="sidebar-menu">
           <button
             className={`menu-item ${
-              telaAtiva === "dashboard" ? "active" : ""
+              telaAtiva === "dashboard"
+                ? "active"
+                : ""
             }`}
             type="button"
             onClick={abrirDashboard}
@@ -184,7 +254,9 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
           <button
             className={`menu-item ${
-              menuBombeirosAtivo ? "active" : ""
+              menuBombeirosAtivo
+                ? "active"
+                : ""
             }`}
             type="button"
             onClick={abrirListaBombeiros}
@@ -195,10 +267,14 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
           <button
             className={`menu-item ${
-              menuIndisponibilidadesAtivo ? "active" : ""
+              menuIndisponibilidadesAtivo
+                ? "active"
+                : ""
             }`}
             type="button"
-            onClick={abrirListaIndisponibilidades}
+            onClick={
+              abrirListaIndisponibilidades
+            }
           >
             <span>!</span>
             Indisponibilidades
@@ -206,10 +282,12 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
           <button
             className={`menu-item ${
-              telaAtiva === "escalas" ? "active" : ""
+              menuEscalasAtivo
+                ? "active"
+                : ""
             }`}
             type="button"
-            onClick={() => setTelaAtiva("escalas")}
+            onClick={abrirEscalas}
           >
             <span>▣</span>
             Escalas
@@ -219,12 +297,19 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <div className="user-avatar">
-              {usuario.nome.charAt(0).toUpperCase()}
+              {usuario.nome
+                .charAt(0)
+                .toUpperCase()}
             </div>
 
             <div>
-              <strong>{usuario.nome}</strong>
-              <span>{usuario.perfil}</span>
+              <strong>
+                {usuario.nome}
+              </strong>
+
+              <span>
+                {usuario.perfil}
+              </span>
             </div>
           </div>
 
@@ -239,41 +324,63 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
       </aside>
 
       <main className="dashboard-content">
-        {telaAtiva === "formulario-bombeiro" ? (
+        {telaAtiva ===
+        "formulario-bombeiro" ? (
           <BombeiroFormulario
             bombeiro={bombeiroSelecionado}
-            aoCancelar={cancelarFormularioBombeiro}
-            aoSalvar={concluirFormularioBombeiro}
+            aoCancelar={
+              cancelarFormularioBombeiro
+            }
+            aoSalvar={
+              concluirFormularioBombeiro
+            }
           />
         ) : telaAtiva === "bombeiros" ? (
           <Bombeiros
-            aoCadastrar={abrirCadastroBombeiro}
-            aoEditar={abrirEdicaoBombeiro}
+            aoCadastrar={
+              abrirCadastroBombeiro
+            }
+            aoEditar={
+              abrirEdicaoBombeiro
+            }
           />
-        ) : telaAtiva === "formulario-indisponibilidade" ? (
+        ) : telaAtiva ===
+          "formulario-indisponibilidade" ? (
           <IndisponibilidadeFormulario
-            indisponibilidade={indisponibilidadeSelecionada}
-            aoCancelar={abrirListaIndisponibilidades}
-            aoSalvar={concluirFormularioIndisponibilidade}
+            indisponibilidade={
+              indisponibilidadeSelecionada
+            }
+            aoCancelar={
+              abrirListaIndisponibilidades
+            }
+            aoSalvar={
+              concluirFormularioIndisponibilidade
+            }
           />
-        ) : telaAtiva === "indisponibilidades" ? (
+        ) : telaAtiva ===
+          "indisponibilidades" ? (
           <Indisponibilidades
-            aoCadastrar={abrirCadastroIndisponibilidade}
-            aoEditar={abrirEdicaoIndisponibilidade}
+            aoCadastrar={
+              abrirCadastroIndisponibilidade
+            }
+            aoEditar={
+              abrirEdicaoIndisponibilidade
+            }
             aoAlterar={carregarResumo}
           />
+        ) : telaAtiva ===
+          "gerar-escala" ? (
+          <GerarEscalaFormulario
+            aoCancelar={abrirEscalas}
+            aoGerar={
+              concluirGeracaoEscala
+            }
+          />
         ) : telaAtiva === "escalas" ? (
-          <section>
-            <span className="page-label">
-              GESTÃO DE ESCALAS
-            </span>
-
-            <h1>Escalas</h1>
-
-            <p>
-              Esta tela será criada posteriormente.
-            </p>
-          </section>
+          <Escalas
+            aoGerar={abrirGerarEscala}
+            aoAlterar={carregarResumo}
+          />
         ) : (
           <>
             <header className="dashboard-header">
@@ -285,19 +392,26 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
                 <h1>Visão geral</h1>
 
                 <p>
-                  Acompanhe as informações principais do
-                  sistema.
+                  Acompanhe as informações
+                  principais do sistema.
                 </p>
               </div>
 
               <div className="header-profile">
                 <div className="user-avatar">
-                  {usuario.nome.charAt(0).toUpperCase()}
+                  {usuario.nome
+                    .charAt(0)
+                    .toUpperCase()}
                 </div>
 
                 <div>
-                  <strong>{usuario.nome}</strong>
-                  <span>{usuario.email}</span>
+                  <strong>
+                    {usuario.nome}
+                  </strong>
+
+                  <span>
+                    {usuario.email}
+                  </span>
                 </div>
               </div>
             </header>
@@ -310,24 +424,36 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
 
             <section className="summary-grid">
               <article className="summary-card">
-                <div className="card-icon red">♟</div>
+                <div className="card-icon red">
+                  ♟
+                </div>
 
                 <div>
-                  <span>Total de bombeiros</span>
+                  <span>
+                    Total de bombeiros
+                  </span>
 
                   <strong>
-                    {carregando ? "..." : totalBombeiros}
+                    {carregando
+                      ? "..."
+                      : totalBombeiros}
                   </strong>
 
-                  <small>Profissionais cadastrados</small>
+                  <small>
+                    Profissionais cadastrados
+                  </small>
                 </div>
               </article>
 
               <article className="summary-card">
-                <div className="card-icon orange">!</div>
+                <div className="card-icon orange">
+                  !
+                </div>
 
                 <div>
-                  <span>Indisponibilidades</span>
+                  <span>
+                    Indisponibilidades
+                  </span>
 
                   <strong>
                     {carregando
@@ -335,17 +461,31 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
                       : totalIndisponibilidades}
                   </strong>
 
-                  <small>Registros encontrados</small>
+                  <small>
+                    Registros encontrados
+                  </small>
                 </div>
               </article>
 
               <article className="summary-card">
-                <div className="card-icon green">✓</div>
+                <div className="card-icon green">
+                  ▣
+                </div>
 
                 <div>
-                  <span>Status do sistema</span>
-                  <strong>Ativo</strong>
-                  <small>Serviços funcionando</small>
+                  <span>
+                    Escalas criadas
+                  </span>
+
+                  <strong>
+                    {carregando
+                      ? "..."
+                      : totalEscalas}
+                  </strong>
+
+                  <small>
+                    Escalas cadastradas
+                  </small>
                 </div>
               </article>
             </section>
@@ -354,55 +494,72 @@ function Dashboard({ usuario, aoSair }: DashboardProps) {
               <div className="section-title">
                 <div>
                   <h2>Acesso rápido</h2>
-                  <p>Escolha uma opção para começar.</p>
+
+                  <p>
+                    Escolha uma opção para
+                    começar.
+                  </p>
                 </div>
               </div>
 
               <div className="actions-grid">
                 <button
                   type="button"
-                  onClick={abrirCadastroBombeiro}
+                  onClick={
+                    abrirCadastroBombeiro
+                  }
                 >
                   <span>＋</span>
 
                   <div>
-                    <strong>Cadastrar bombeiro</strong>
+                    <strong>
+                      Cadastrar bombeiro
+                    </strong>
+
                     <small>
-                      Adicionar um novo profissional
+                      Adicionar um novo
+                      profissional
                     </small>
                   </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={abrirCadastroIndisponibilidade}
+                  onClick={
+                    abrirCadastroIndisponibilidade
+                  }
                 >
                   <span>!</span>
 
                   <div>
                     <strong>
-                      Registrar indisponibilidade
+                      Registrar
+                      indisponibilidade
                     </strong>
 
                     <small>
-                      Informar férias ou afastamento
+                      Informar férias ou
+                      afastamento
                     </small>
                   </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setTelaAtiva("escalas")
+                  onClick={
+                    abrirGerarEscala
                   }
                 >
                   <span>▣</span>
 
                   <div>
-                    <strong>Elaborar escala</strong>
+                    <strong>
+                      Elaborar escala
+                    </strong>
 
                     <small>
-                      Gerar uma nova escala operacional
+                      Gerar uma nova escala
+                      operacional
                     </small>
                   </div>
                 </button>

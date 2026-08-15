@@ -8,7 +8,8 @@ import "./IndisponibilidadeFormulario.css";
 
 interface BombeiroResumo {
   id: number;
-  nome: string;
+  nomeCompleto: string;
+  matricula?: string;
   status?: string;
 }
 
@@ -139,9 +140,44 @@ export default function IndisponibilidadeFormulario({
         <div className="unavailability-form-grid">
           <label className="field-full">
             <span>Bombeiro *</span>
-            <select value={bombeiroId} onChange={(e) => setBombeiroId(e.target.value)} disabled={salvando} required>
-              <option value="">Selecione um bombeiro</option>
-              {bombeiros.map((bombeiro) => <option key={bombeiro.id} value={bombeiro.id}>{bombeiro.nome}</option>)}
+
+            <select
+              value={bombeiroId}
+              onChange={(event) =>
+                setBombeiroId(event.target.value)
+              }
+              required
+              style={{
+                color: "#111827",
+                backgroundColor: "#ffffff",
+                WebkitTextFillColor: "#111827",
+              }}
+            >
+              <option
+                value=""
+                style={{
+                  color: "#111827",
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                Selecione um bombeiro
+              </option>
+
+              {bombeiros.map((bombeiro) => (
+                <option
+                  key={bombeiro.id}
+                  value={bombeiro.id}
+                  style={{
+                    color: "#111827",
+                    backgroundColor: "#ffffff",
+                  }}
+                >
+                  {bombeiro.nomeCompleto}
+                  {bombeiro.matricula
+                    ? ` — ${bombeiro.matricula}`
+                    : ""}
+                </option>
+              ))}
             </select>
           </label>
 
