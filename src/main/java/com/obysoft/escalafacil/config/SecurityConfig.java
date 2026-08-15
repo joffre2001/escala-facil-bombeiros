@@ -1,9 +1,11 @@
 package com.obysoft.escalafacil.config;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -19,6 +21,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.obysoft.escalafacil.security.JwtAuthenticationFilter;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -27,7 +31,9 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+
+        this.jwtAuthenticationFilter =
+                jwtAuthenticationFilter;
     }
 
     @Bean
@@ -35,13 +41,33 @@ public class SecurityConfig {
             HttpSecurity http) throws Exception {
 
         return http
-                .cors(cors ->
-                        cors.configurationSource(corsConfigurationSource())
-                )
+                .cors(cors -> cors.configurationSource(
+                        corsConfigurationSource()
+                ))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
+                        )
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(
+                                (request, response, error) ->
+                                        escreverErro(
+                                                response,
+                                                HttpServletResponse
+                                                        .SC_UNAUTHORIZED,
+                                                "Authentication required."
+                                        )
+                        )
+                        .accessDeniedHandler(
+                                (request, response, error) ->
+                                        escreverErro(
+                                                response,
+                                                HttpServletResponse
+                                                        .SC_FORBIDDEN,
+                                                "Access denied."
+                                        )
                         )
                 )
                 .authorizeHttpRequests(authorize ->
@@ -51,8 +77,10 @@ public class SecurityConfig {
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
                                         "/v3/api-docs/**"
-                                ).permitAll()
-                                .anyRequest().authenticated()
+                                )
+                                .permitAll()
+                                .anyRequest()
+                                .authenticated()
                 )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
@@ -61,9 +89,31 @@ public class SecurityConfig {
                 .build();
     }
 
+    private void escreverErro(
+            HttpServletResponse response,
+            int status,
+            String message) throws IOException {
+
+        response.setStatus(status);
+        response.setContentType(
+                MediaType.APPLICATION_JSON_VALUE
+        );
+        response.setCharacterEncoding("UTF-8");
+
+        response.getWriter().write(
+                """
+                {
+                  "status": %d,
+                  "message": "%s"
+                }
+                """.formatted(status, message)
+        );
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration =
+                new CorsConfiguration();
 
         configuration.setAllowedOrigins(
                 List.of("http://localhost:5173")
@@ -81,7 +131,10 @@ public class SecurityConfig {
         );
 
         configuration.setAllowedHeaders(
-                List.of("Authorization", "Content-Type")
+                List.of(
+                        "Authorization",
+                        "Content-Type"
+                )
         );
 
         configuration.setExposedHeaders(
@@ -93,7 +146,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
 
         return source;
     }

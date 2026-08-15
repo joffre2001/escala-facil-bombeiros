@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import api from "./api/api";
 import "./App.css";
+import { useEffect } from "react";
 import Dashboard from "./components/Dashboard";
 
 interface LoginResponse {
@@ -14,8 +15,8 @@ interface LoginResponse {
 }
 
 function App() {
-  const [email, setEmail] = useState("admin@escalafacil.com");
-  const [senha, setSenha] = useState("Admin@123");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [usuario, setUsuario] = useState<LoginResponse | null>(() => {
@@ -33,6 +34,27 @@ function App() {
       return null;
     }
   });
+
+  useEffect(() => {
+    function encerrarSessaoExpirada() {
+      setUsuario(null);
+      setErro(
+        "Sua sessão expirou. Entre novamente."
+      );
+    }
+
+    window.addEventListener(
+      "auth-expired",
+      encerrarSessaoExpirada
+    );
+
+    return () => {
+      window.removeEventListener(
+        "auth-expired",
+        encerrarSessaoExpirada
+      );
+    };
+  }, []);
 
   async function realizarLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
