@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.obysoft.escalafacil.dto.EscalaResponse;
 import com.obysoft.escalafacil.dto.GerarEscalaRequest;
+import com.obysoft.escalafacil.dto.TrocarBombeiroRequest;
 import com.obysoft.escalafacil.service.EscalaService;
 
 import jakarta.validation.Valid;
@@ -37,26 +38,62 @@ public class EscalaController {
     }
 
     @GetMapping("/{id}")
-    public EscalaResponse buscar(@PathVariable Long id) {
+    public EscalaResponse buscar(
+            @PathVariable Long id) {
+
         return service.buscar(id);
     }
 
     @PostMapping("/generate")
     public ResponseEntity<EscalaResponse> gerar(
-            @Valid @RequestBody GerarEscalaRequest request) {
-        EscalaResponse response = service.gerar(request);
-        return ResponseEntity.created(URI.create("/schedules/" + response.id()))
+            @Valid
+            @RequestBody GerarEscalaRequest request) {
+
+        EscalaResponse response =
+                service.gerar(request);
+
+        return ResponseEntity
+                .created(
+                        URI.create(
+                                "/schedules/"
+                                        + response.id()
+                        )
+                )
                 .body(response);
     }
 
+    @PatchMapping(
+            "/{escalaId}/items/{itemId}/firefighter"
+    )
+    public EscalaResponse trocarBombeiro(
+            @PathVariable Long escalaId,
+            @PathVariable Long itemId,
+            @Valid
+            @RequestBody
+            TrocarBombeiroRequest request) {
+
+        return service.trocarBombeiro(
+                escalaId,
+                itemId,
+                request.bombeiroId()
+        );
+    }
+
     @PatchMapping("/{id}/publish")
-    public EscalaResponse publicar(@PathVariable Long id) {
+    public EscalaResponse publicar(
+            @PathVariable Long id) {
+
         return service.publicar(id);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    public ResponseEntity<Void> excluir(
+            @PathVariable Long id) {
+
         service.excluir(id);
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

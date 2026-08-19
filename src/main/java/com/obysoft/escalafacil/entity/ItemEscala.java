@@ -4,8 +4,6 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,22 +20,36 @@ public class ItemEscala {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "escala_id", nullable = false)
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
+            name = "escala_id",
+            nullable = false
+    )
     private Escala escala;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "bombeiro_id", nullable = false)
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
+            name = "bombeiro_id",
+            nullable = false
+    )
     private Bombeiro bombeiro;
 
-    /**
-     *
-     */
-   
-    @Column(name = "inicio_plantao", nullable = false)
+    @Column(
+            name = "inicio_plantao",
+            nullable = false
+    )
     private LocalDateTime inicioPlantao;
 
-    @Column(name = "fim_plantao", nullable = false)
+    @Column(
+            name = "fim_plantao",
+            nullable = false
+    )
     private LocalDateTime fimPlantao;
 
     @Column(nullable = false)
@@ -46,11 +58,18 @@ public class ItemEscala {
     @Column(length = 255)
     private String observacao;
 
-    protected ItemEscala() {}
+    protected ItemEscala() {
+        // Construtor exigido pelo JPA
+    }
 
-    public ItemEscala(Escala escala, Bombeiro bombeiro,
-            LocalDateTime inicioPlantao, LocalDateTime fimPlantao,
-            boolean conflito, String observacao) {
+    public ItemEscala(
+            Escala escala,
+            Bombeiro bombeiro,
+            LocalDateTime inicioPlantao,
+            LocalDateTime fimPlantao,
+            boolean conflito,
+            String observacao) {
+
         this.escala = escala;
         this.bombeiro = bombeiro;
         this.inicioPlantao = inicioPlantao;
@@ -59,10 +78,41 @@ public class ItemEscala {
         this.observacao = observacao;
     }
 
-    public Long getId() { return id; }
-    public Bombeiro getBombeiro() { return bombeiro; }
-    public LocalDateTime getInicioPlantao() { return inicioPlantao; }
-    public LocalDateTime getFimPlantao() { return fimPlantao; }
-    public boolean isConflito() { return conflito; }
-    public String getObservacao() { return observacao; }
+    public void trocarBombeiro(
+            Bombeiro novoBombeiro,
+            boolean conflito,
+            String observacao) {
+
+        this.bombeiro = novoBombeiro;
+        this.conflito = conflito;
+        this.observacao = observacao;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Escala getEscala() {
+        return escala;
+    }
+
+    public Bombeiro getBombeiro() {
+        return bombeiro;
+    }
+
+    public LocalDateTime getInicioPlantao() {
+        return inicioPlantao;
+    }
+
+    public LocalDateTime getFimPlantao() {
+        return fimPlantao;
+    }
+
+    public boolean isConflito() {
+        return conflito;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
 }

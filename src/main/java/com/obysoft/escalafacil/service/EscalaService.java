@@ -112,6 +112,140 @@ public class EscalaService {
     }
 
     @Transactional
+    public EscalaResponse trocarBombeiro(
+            Long escalaId,
+            Long itemId,
+            Long bombeiroId) {
+
+        Escala escala = encontrar(escalaId);
+
+        if (escala.getStatus()
+                == StatusEscala.PUBLICADA) {
+
+            throw new RegraNegocioException(
+                    "Uma escala publicada não pode ser alterada."
+            );
+        }
+
+        ItemEscala item = itemEscalaRepository
+                .findByIdAndEscalaId(
+                        itemId,
+                        escalaId
+                )
+                .orElseThrow(()
+                        -> new RecursoNaoEncontradoException(
+                        "Plantão não encontrado nesta escala."
+                )
+                );
+
+        Bombeiro bombeiro = bombeiroRepository
+                .findById(bombeiroId)
+                .orElseThrow(()
+                        -> new RecursoNaoEncontradoException(
+                        "Bombeiro não encontrado."
+                )
+                );
+
+        if (bombeiro.getStatus()
+                != StatusBombeiro.ATIVO) {
+
+            throw new RegraNegocioException(
+                    "Somente bombeiros ativos podem ser escalados."
+            );
+        }
+
+        if (item.getBombeiro()
+                .getId()
+                .equals(bombeiroId)) {
+
+            return response(escala);
+        }
+
+        LocalDate dataPlantao = item
+                .getInicioPlantao()
+                .toLocalDate();
+
+        Indisponibilidade indisponibilidade
+                = indisponibilidadeRepository
+                        .findByDataInicioLessThanEqualAndDataFimGreaterThanEqual(
+                                dataPlantao,
+                                dataPlantao
+                        )
+                        .stream()
+                        .filter(registro
+                                -> registro
+                                .getBombeiro()
+                                .getId()
+                                .equals(bombeiroId)
+                        )
+                        .findFirst()
+                        .orElse(null);
+
+        if (indisponibilidade != null
+                && !indisponibilidade.isNegociavel()) {
+
+            throw new RegraNegocioException(
+                    "O bombeiro possui uma indisponibilidade "
+                    + "inegociável nesta data."
+            );
+        }
+
+        boolean conflito = false;
+        List<String> alertas = new ArrayList<>();
+
+        if (indisponibilidade != null) {
+            conflito = true;
+
+            alertas.add(
+                    "Indisponibilidade negociável — "
+                    + "confirmar com o bombeiro."
+            );
+        }
+
+        LocalDateTime inicioVerificacao
+                = RegraPlantao24h.inicio(
+                        dataPlantao.minusDays(1)
+                );
+
+        LocalDateTime fimVerificacao
+                = RegraPlantao24h.inicio(
+                        dataPlantao.plusDays(1)
+                );
+
+        boolean possuiPlantaoProximo
+                = itemEscalaRepository
+                        .existsByBombeiroIdAndInicioPlantaoBetweenAndIdNot(
+                                bombeiroId,
+                                inicioVerificacao,
+                                fimVerificacao,
+                                itemId
+                        );
+
+        if (possuiPlantaoProximo) {
+            conflito = true;
+
+            alertas.add(
+                    "O bombeiro possui outro plantão "
+                    + "no mesmo dia ou em dia consecutivo."
+            );
+        }
+
+        String observacao = alertas.isEmpty()
+                ? null
+                : String.join(" ", alertas);
+
+        item.trocarBombeiro(
+                bombeiro,
+                conflito,
+                observacao
+        );
+
+        itemEscalaRepository.save(item);
+
+        return response(escala);
+    }
+
+    @Transactional
     public EscalaResponse publicar(Long id) {
         Escala escala = encontrar(id);
         if (escala.getStatus() == StatusEscala.PUBLICADA) {
@@ -145,15 +279,17 @@ public class EscalaService {
         List<Bombeiro> livres = bombeiros.stream()
                 .filter(b -> !escaladosNoDia.contains(b.getId()))
                 .filter(b -> podeTrabalharSemDobrar(
-                        b.getId(), ultimoPlantao.get(b.getId()), data))
+                b.getId(), ultimoPlantao.get(b.getId()), data))
                 .filter(b -> indisponibilidadeNaData(porBombeiro.get(b.getId()), data) == null)
                 .sorted(equilibrio).toList();
-        if (!livres.isEmpty()) return new Candidato(livres.get(0), false);
+        if (!livres.isEmpty()) {
+            return new Candidato(livres.get(0), false);
+        }
 
         List<Bombeiro> negociaveis = bombeiros.stream()
                 .filter(b -> !escaladosNoDia.contains(b.getId()))
                 .filter(b -> podeTrabalharSemDobrar(
-                        b.getId(), ultimoPlantao.get(b.getId()), data))
+                b.getId(), ultimoPlantao.get(b.getId()), data))
                 .filter(b -> {
                     Indisponibilidade i = indisponibilidadeNaData(porBombeiro.get(b.getId()), data);
                     return i != null && i.isNegociavel();
@@ -176,7 +312,9 @@ public class EscalaService {
 
     private Indisponibilidade indisponibilidadeNaData(
             List<Indisponibilidade> itens, LocalDate data) {
-        if (itens == null) return null;
+        if (itens == null) {
+            return null;
+        }
         return itens.stream()
                 .filter(i -> !data.isBefore(i.getDataInicio()) && !data.isAfter(i.getDataFim()))
                 .findFirst().orElse(null);
@@ -193,8 +331,8 @@ public class EscalaService {
     }
 
     private Escala encontrar(Long id) {
-        return escalaRepository.findById(id).orElseThrow(() ->
-                new RecursoNaoEncontradoException("Escala não encontrada."));
+        return escalaRepository.findById(id).orElseThrow(()
+                -> new RecursoNaoEncontradoException("Escala não encontrada."));
     }
 
     private int totalAlertas(Escala escala) {
@@ -207,14 +345,16 @@ public class EscalaService {
                 .sorted(Comparator.comparing(ItemEscala::getInicioPlantao)
                         .thenComparing(i -> i.getBombeiro().getNomeCompleto()))
                 .map(i -> new ItemEscalaResponse(i.getId(), i.getBombeiro().getId(),
-                        i.getBombeiro().getNomeCompleto(), i.getInicioPlantao(),
-                        i.getFimPlantao(),
-                        i.isConflito(), i.getObservacao()))
+                i.getBombeiro().getNomeCompleto(), i.getInicioPlantao(),
+                i.getFimPlantao(),
+                i.isConflito(), i.getObservacao()))
                 .toList();
         return new EscalaResponse(escala.getId(), escala.getNome(), escala.getDataInicio(),
                 escala.getDataFim(), escala.getStatus(), escala.getCriadaEm(), itens.size(),
                 totalAlertas(escala), itens);
     }
 
-    private record Candidato(Bombeiro bombeiro, boolean conflito) {}
+    private record Candidato(Bombeiro bombeiro, boolean conflito) {
+
+    }
 }
