@@ -13,16 +13,21 @@ import com.obysoft.escalafacil.entity.Usuario;
 import com.obysoft.escalafacil.repository.UsuarioRepository;
 
 @Service
-public class UsuarioDetailsService implements UserDetailsService {
+public class UsuarioDetailsService
+        implements UserDetailsService {
 
     private final UsuarioRepository usuarioRepository;
 
-    public UsuarioDetailsService(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
+    public UsuarioDetailsService(
+            UsuarioRepository usuarioRepository) {
+
+        this.usuarioRepository =
+                usuarioRepository;
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email)
+    public UserDetails loadUserByUsername(
+            String email)
             throws UsernameNotFoundException {
 
         Usuario usuario = usuarioRepository
@@ -40,9 +45,14 @@ public class UsuarioDetailsService implements UserDetailsService {
                 true,
                 true,
                 true,
-                List.of(new SimpleGrantedAuthority(
-                        "ROLE_" + usuario.getPerfil().name()
-                ))
+                List.of(
+                        new SimpleGrantedAuthority(
+                                "ROLE_"
+                                        + usuario
+                                                .getPerfil()
+                                                .name()
+                        )
+                )
         );
     }
 }
