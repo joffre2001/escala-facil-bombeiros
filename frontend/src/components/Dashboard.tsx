@@ -15,13 +15,14 @@ import IndisponibilidadeFormulario from "./IndisponibilidadeFormulario";
 
 import Escalas from "./Escalas";
 import GerarEscalaFormulario from "./GerarEscalaFormulario";
+import TrocasTurno from "./TrocasTurno";
 
 import "./Dashboard.css";
 
 interface UsuarioLogado {
   nome: string;
   email: string;
-  perfil: "ADMIN" | "GESTOR";
+  perfil: "ADMIN" | "GESTOR" | "BOMBEIRO";
 }
 
 interface DashboardProps {
@@ -36,6 +37,7 @@ type TelaAtiva =
   | "indisponibilidades"
   | "formulario-indisponibilidade"
   | "escalas"
+  | "trocas"
   | "gerar-escala";
 
 function Dashboard({
@@ -292,6 +294,11 @@ function Dashboard({
             <span>▣</span>
             Escalas
           </button>
+
+          <button className={`menu-item ${telaAtiva === "trocas" ? "active" : ""}`}
+            type="button" onClick={() => setTelaAtiva("trocas")}>
+            <span>⇄</span> Trocas de turno
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -343,6 +350,7 @@ function Dashboard({
             aoEditar={
               abrirEdicaoBombeiro
             }
+            podeExcluir={usuario.perfil === "ADMIN"}
           />
         ) : telaAtiva ===
           "formulario-indisponibilidade" ? (
@@ -376,10 +384,13 @@ function Dashboard({
               concluirGeracaoEscala
             }
           />
+        ) : telaAtiva === "trocas" ? (
+          <TrocasTurno />
         ) : telaAtiva === "escalas" ? (
           <Escalas
             aoGerar={abrirGerarEscala}
             aoAlterar={carregarResumo}
+            podeExcluir={usuario.perfil === "ADMIN"}
           />
         ) : (
           <>

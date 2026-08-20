@@ -60,7 +60,8 @@ public class AuthService {
                 usuario.getId(),
                 usuario.getNome(),
                 usuario.getEmail(),
-                usuario.getPerfil()
+                usuario.getPerfil(),
+                usuario.getBombeiro() == null ? null : usuario.getBombeiro().getId()
         );
     }
 }

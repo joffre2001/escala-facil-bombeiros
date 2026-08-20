@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.obysoft.escalafacil.dto.IndisponibilidadeRequest;
 import com.obysoft.escalafacil.dto.IndisponibilidadeResponse;
@@ -21,6 +22,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/unavailabilities")
+@PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
 public class IndisponibilidadeController {
 
     private final IndisponibilidadeService service;

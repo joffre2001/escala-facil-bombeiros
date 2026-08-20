@@ -58,6 +58,12 @@ public class ItemEscala {
     @Column(length = 255)
     private String observacao;
 
+    @Column(nullable = false)
+    private boolean cancelado;
+
+    @Column(name = "motivo_cancelamento", length = 255)
+    private String motivoCancelamento;
+
     protected ItemEscala() {
         // Construtor exigido pelo JPA
     }
@@ -76,6 +82,7 @@ public class ItemEscala {
         this.fimPlantao = fimPlantao;
         this.conflito = conflito;
         this.observacao = observacao;
+        this.cancelado = false;
     }
 
     public void trocarBombeiro(
@@ -115,4 +122,8 @@ public class ItemEscala {
     public String getObservacao() {
         return observacao;
     }
+
+    public boolean isCancelado() { return cancelado; }
+    public String getMotivoCancelamento() { return motivoCancelamento; }
+    public void cancelar(String motivo) { this.cancelado = true; this.motivoCancelamento = motivo; }
 }

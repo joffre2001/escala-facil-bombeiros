@@ -7,6 +7,11 @@ import com.obysoft.escalafacil.enumeration.StatusBombeiro;
 import com.obysoft.escalafacil.exception.RecursoNaoEncontradoException;
 import com.obysoft.escalafacil.exception.RegraNegocioException;
 import com.obysoft.escalafacil.repository.BombeiroRepository;
+import com.obysoft.escalafacil.repository.UsuarioRepository;
+import com.obysoft.escalafacil.repository.ItemEscalaRepository;
+import com.obysoft.escalafacil.entity.Usuario;
+import com.obysoft.escalafacil.enumeration.PerfilUsuario;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +21,16 @@ import java.util.List;
 public class BombeiroService {
 
     private final BombeiroRepository repository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ItemEscalaRepository itemEscalaRepository;
 
-    public BombeiroService(BombeiroRepository repository) {
+    public BombeiroService(BombeiroRepository repository, UsuarioRepository usuarioRepository,
+            PasswordEncoder passwordEncoder, ItemEscalaRepository itemEscalaRepository) {
         this.repository = repository;
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.itemEscalaRepository = itemEscalaRepository;
     }
 
     @Transactional(readOnly = true)
@@ -41,7 +53,9 @@ public class BombeiroService {
         Bombeiro bombeiro = new Bombeiro();
         preencher(bombeiro, request);
 
-        return response(repository.save(bombeiro));
+        Bombeiro salvo = repository.save(bombeiro);
+        criarUsuario(salvo);
+        return response(salvo);
     }
 
     @Transactional
@@ -54,7 +68,22 @@ public class BombeiroService {
         validarDadosUnicosNaAtualizacao(id, request);
         preencher(bombeiro, request);
 
+        usuarioRepository.findByBombeiroId(id).ifPresent(usuario ->
+                usuario.atualizarIdentificacao(bombeiro.getNomeCompleto(), bombeiro.getEmail()));
+
         return response(bombeiro);
+    }
+
+    @Transactional
+    public void excluir(Long id) {
+        Bombeiro bombeiro = encontrar(id);
+        if (itemEscalaRepository.existsByBombeiroId(id)) {
+            throw new RegraNegocioException(
+                    "O bombeiro possui escalas registradas. Exclua essas escalas antes de removê-lo."
+            );
+        }
+        usuarioRepository.findByBombeiroId(id).ifPresent(usuarioRepository::delete);
+        repository.delete(bombeiro);
     }
 
     @Transactional
@@ -71,7 +100,20 @@ public class BombeiroService {
         Bombeiro bombeiro = encontrar(id);
         bombeiro.setStatus(status);
 
+        usuarioRepository.findByBombeiroId(id)
+                .ifPresent(usuario -> usuario.alterarStatus(status == StatusBombeiro.ATIVO));
+
         return response(bombeiro);
+    }
+
+    private void criarUsuario(Bombeiro bombeiro) {
+        if (usuarioRepository.existsByEmailIgnoreCase(bombeiro.getEmail())) {
+            throw new RegraNegocioException("Já existe um usuário com o e-mail informado.");
+        }
+        Usuario usuario = new Usuario(bombeiro.getNomeCompleto(), bombeiro.getEmail(),
+                passwordEncoder.encode(bombeiro.getMatricula()), PerfilUsuario.BOMBEIRO);
+        usuario.vincularBombeiro(bombeiro);
+        usuarioRepository.save(usuario);
     }
 
     private void validarDadosUnicosNaCriacao(BombeiroRequest request) {

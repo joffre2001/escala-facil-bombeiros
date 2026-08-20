@@ -20,6 +20,8 @@ public interface ItemEscalaRepository
             LocalDateTime inicioPlantao
     );
 
+    boolean existsByBombeiroId(Long bombeiroId);
+
     boolean existsByBombeiroIdAndInicioPlantaoBetweenAndIdNot(
             Long bombeiroId,
             LocalDateTime inicio,

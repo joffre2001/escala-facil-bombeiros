@@ -10,6 +10,8 @@ export interface ItemEscala {
   fimPlantao: string;
   conflito: boolean;
   observacao: string | null;
+  cancelado: boolean;
+  motivoCancelamento: string | null;
 }
 
 export interface Escala {
@@ -24,9 +26,12 @@ export interface Escala {
   itens: ItemEscala[];
 }
 
+interface Historico { id:number; itemEscalaId:number|null; acao:string; descricao:string; atorEmail:string; atorPerfil:string; criadoEm:string }
+
 interface Props {
   aoGerar: () => void;
   aoAlterar?: () => void | Promise<void>;
+  podeExcluir?: boolean;
 }
 
 function formatarData(valor: string) {
@@ -57,6 +62,7 @@ function obterMensagemErro(erro: unknown, mensagemPadrao: string) {
 export default function Escalas({
   aoGerar,
   aoAlterar,
+  podeExcluir = false,
 }: Props) {
   const [escalas, setEscalas] = useState<Escala[]>([]);
   const [escalaDetalhada, setEscalaDetalhada] =
@@ -67,6 +73,8 @@ export default function Escalas({
     useState<number | null>(null);
 
   const [erro, setErro] = useState("");
+
+  const [historico, setHistorico] = useState<Historico[] | null>(null);
 
   const carregarEscalas = useCallback(async () => {
     setCarregando(true);
@@ -108,6 +116,11 @@ export default function Escalas({
         )
       );
     }
+  }
+
+  async function abrirHistorico(id:number) {
+    try { setHistorico((await api.get<Historico[]>(`/schedules/${id}/history`)).data); }
+    catch (error) { setErro(obterMensagemErro(error,"Não foi possível carregar o histórico.")); }
   }
 
   async function publicar(escala: Escala) {
@@ -177,6 +190,13 @@ export default function Escalas({
     } finally {
       setProcessando(null);
     }
+  }
+
+  async function cancelarTurno(escalaId:number,item:ItemEscala){
+    const motivo=window.prompt("Informe o motivo do cancelamento deste plantão:");
+    if(!motivo?.trim())return;
+    try{const resposta=await api.patch<Escala>(`/schedules/${escalaId}/items/${item.id}/cancel`,{motivo:motivo.trim()});setEscalaDetalhada(resposta.data);await carregarEscalas();}
+    catch(error){setErro(obterMensagemErro(error,"Não foi possível cancelar o plantão."));}
   }
 
   return (
@@ -273,6 +293,10 @@ export default function Escalas({
                   Detalhes
                 </button>
 
+                <button type="button" onClick={() => void abrirHistorico(escala.id)}>
+                  Histórico
+                </button>
+
                 {escala.status !== "PUBLICADA" && (
                   <button
                     type="button"
@@ -288,7 +312,7 @@ export default function Escalas({
                   </button>
                 )}
 
-                {escala.status !== "PUBLICADA" && (
+                {podeExcluir && (
                   <button
                     className="danger"
                     type="button"
@@ -305,6 +329,21 @@ export default function Escalas({
               </div>
             </article>
           ))}
+        </div>
+      )}
+
+      {historico && (
+        <div className="escala-modal-backdrop" onMouseDown={() => setHistorico(null)}>
+          <section className="escala-modal" onMouseDown={(event) => event.stopPropagation()}>
+            <header><div><span className="page-label">AUDITORIA</span><h2>Histórico da escala</h2></div>
+              <button className="close-button" type="button" onClick={() => setHistorico(null)}>×</button></header>
+            <div className="plantao-list">
+              {historico.length === 0 ? <p>Nenhum evento registrado.</p> : historico.map(item => (
+                <article className="plantao" key={item.id}><div><strong>{item.acao.replaceAll("_", " ")}</strong>
+                  <span>{item.descricao}</span></div><div><small>{item.atorEmail} · {item.atorPerfil}<br />{formatarDataHora(item.criadoEm)}</small></div></article>
+              ))}
+            </div>
+          </section>
         </div>
       )}
 
@@ -402,6 +441,10 @@ export default function Escalas({
                         <small>
                           {item.observacao}
                         </small>
+                      )}
+
+                      {item.cancelado ? <span className="alert-badge">Cancelado: {item.motivoCancelamento}</span> : (
+                        <button className="danger" type="button" onClick={() => void cancelarTurno(escalaDetalhada.id,item)}>Cancelar turno</button>
                       )}
                     </div>
                   </article>

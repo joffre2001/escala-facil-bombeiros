@@ -337,3 +337,11 @@
     width: 100%;
   }
 }
+
+.table-actions .delete-button {
+  border-color: #efb4ae;
+  background: #fff0ee;
+  color: #a9281c;
+}
+
+.table-actions .delete-button:hover { background: #fbdedb; }

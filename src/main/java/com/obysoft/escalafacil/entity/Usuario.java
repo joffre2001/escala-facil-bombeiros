@@ -11,6 +11,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -53,6 +55,10 @@ public class Usuario {
     )
     private LocalDateTime criadoEm;
 
+    @OneToOne
+    @JoinColumn(name = "bombeiro_id", unique = true)
+    private Bombeiro bombeiro;
+
     protected Usuario() {
     }
 
@@ -92,6 +98,15 @@ public class Usuario {
 
     public PerfilUsuario getPerfil() {
         return perfil;
+    }
+
+    public Bombeiro getBombeiro() { return bombeiro; }
+
+    public void vincularBombeiro(Bombeiro bombeiro) { this.bombeiro = bombeiro; }
+
+    public void atualizarIdentificacao(String nome, String email) {
+        this.nome = nome;
+        this.email = email;
     }
 
     public boolean isAtivo() {

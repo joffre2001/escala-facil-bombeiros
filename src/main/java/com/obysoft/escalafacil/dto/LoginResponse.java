@@ -9,7 +9,8 @@ public record LoginResponse(
         Long usuarioId,
         String nome,
         String email,
-        PerfilUsuario perfil
+        PerfilUsuario perfil,
+        Long bombeiroId
 
 ) {
 }

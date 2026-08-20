@@ -18,9 +18,10 @@ export interface Bombeiro {
 interface BombeirosProps {
   aoCadastrar: () => void;
   aoEditar: (bombeiro: Bombeiro) => void;
+  podeExcluir?: boolean;
 }
 
-function Bombeiros({ aoCadastrar, aoEditar }: BombeirosProps) {
+function Bombeiros({ aoCadastrar, aoEditar, podeExcluir = false }: BombeirosProps) {
   const [bombeiros, setBombeiros] = useState<Bombeiro[]>([]);
   const [pesquisa, setPesquisa] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -104,6 +105,19 @@ function Bombeiros({ aoCadastrar, aoEditar }: BombeirosProps) {
     } finally {
       setAlterandoStatusId(null);
     }
+  }
+
+  async function excluir(bombeiro: Bombeiro) {
+    if (!window.confirm(`Excluir permanentemente ${bombeiro.nomeCompleto}? Esta ação não pode ser desfeita.`)) return;
+    try {
+      setAlterandoStatusId(bombeiro.id);
+      setErro(""); setMensagem("");
+      await api.delete(`/firefighters/${bombeiro.id}`);
+      setBombeiros(lista => lista.filter(item => item.id !== bombeiro.id));
+      setMensagem("Bombeiro e usuário de acesso excluídos.");
+    } catch (error: any) {
+      setErro(error.response?.data?.message ?? "Não foi possível excluir o bombeiro.");
+    } finally { setAlterandoStatusId(null); }
   }
 
   function formatarData(data: string | null) {
@@ -226,6 +240,13 @@ function Bombeiros({ aoCadastrar, aoEditar }: BombeirosProps) {
                       >
                         Editar
                       </button>
+                      {podeExcluir && (
+                        <button className="delete-button" type="button"
+                          disabled={alterandoStatusId === bombeiro.id}
+                          onClick={() => void excluir(bombeiro)}>
+                          Excluir
+                        </button>
+                      )}
 
                       <button
                         className={

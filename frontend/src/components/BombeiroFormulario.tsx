@@ -186,6 +186,12 @@ function BombeiroFormulario({
         <div className="form-section-title">
           <h2>Informações pessoais</h2>
           <p>Campos marcados com * são obrigatórios.</p>
+          {!modoEdicao && (
+            <p>
+              O usuário de acesso será criado automaticamente com este e-mail.
+              A senha inicial será a matrícula informada.
+            </p>
+          )}
         </div>
 
         <div className="form-grid">

@@ -4,5 +4,5 @@ import java.time.LocalDateTime;
 
 public record ItemEscalaResponse(Long id, Long bombeiroId, String bombeiroNome,
         LocalDateTime inicioPlantao, LocalDateTime fimPlantao,
-        boolean conflito, String observacao) {
+        boolean conflito, String observacao, boolean cancelado, String motivoCancelamento) {
 }

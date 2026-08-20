@@ -22,12 +22,14 @@ import com.obysoft.escalafacil.entity.Indisponibilidade;
 import com.obysoft.escalafacil.entity.ItemEscala;
 import com.obysoft.escalafacil.enumeration.StatusBombeiro;
 import com.obysoft.escalafacil.enumeration.StatusEscala;
+import com.obysoft.escalafacil.enumeration.StatusTroca;
 import com.obysoft.escalafacil.exception.RecursoNaoEncontradoException;
 import com.obysoft.escalafacil.exception.RegraNegocioException;
 import com.obysoft.escalafacil.repository.BombeiroRepository;
 import com.obysoft.escalafacil.repository.EscalaRepository;
 import com.obysoft.escalafacil.repository.IndisponibilidadeRepository;
 import com.obysoft.escalafacil.repository.ItemEscalaRepository;
+import com.obysoft.escalafacil.repository.SolicitacaoTrocaRepository;
 
 @Service
 public class EscalaService {
@@ -36,15 +38,20 @@ public class EscalaService {
     private final BombeiroRepository bombeiroRepository;
     private final IndisponibilidadeRepository indisponibilidadeRepository;
     private final ItemEscalaRepository itemEscalaRepository;
+    private final AuditoriaEscalaService auditoria;
+    private final SolicitacaoTrocaRepository solicitacoesTroca;
 
     public EscalaService(EscalaRepository escalaRepository,
             BombeiroRepository bombeiroRepository,
             IndisponibilidadeRepository indisponibilidadeRepository,
-            ItemEscalaRepository itemEscalaRepository) {
+            ItemEscalaRepository itemEscalaRepository, AuditoriaEscalaService auditoria,
+            SolicitacaoTrocaRepository solicitacoesTroca) {
         this.escalaRepository = escalaRepository;
         this.bombeiroRepository = bombeiroRepository;
         this.indisponibilidadeRepository = indisponibilidadeRepository;
         this.itemEscalaRepository = itemEscalaRepository;
+        this.auditoria = auditoria;
+        this.solicitacoesTroca = solicitacoesTroca;
     }
 
     @Transactional(readOnly = true)
@@ -58,8 +65,18 @@ public class EscalaService {
         return response(encontrar(id));
     }
 
+    @Transactional(readOnly = true)
+    public List<EscalaResponse> listarPublicadasPorBombeiro(Long bombeiroId) {
+        return escalaRepository
+                .findDistinctByStatusAndItensBombeiroIdOrderByDataInicioDesc(
+                        StatusEscala.PUBLICADA, bombeiroId)
+                .stream()
+                .map(escala -> responseSomenteDoBombeiro(escala, bombeiroId))
+                .toList();
+    }
+
     @Transactional
-    public EscalaResponse gerar(GerarEscalaRequest request) {
+    public EscalaResponse gerar(GerarEscalaRequest request, String atorEmail) {
         validar(request);
 
         List<Bombeiro> bombeiros = bombeiroRepository
@@ -108,14 +125,17 @@ public class EscalaService {
             }
         }
 
-        return response(escalaRepository.save(escala));
+        Escala salva=escalaRepository.save(escala);
+        auditoria.registrar(salva,null,"ESCALA_CRIADA","Escala gerada com "+salva.getItens().size()+" designações.",atorEmail);
+        return response(salva);
     }
 
     @Transactional
     public EscalaResponse trocarBombeiro(
             Long escalaId,
             Long itemId,
-            Long bombeiroId) {
+            Long bombeiroId,
+            String atorEmail) {
 
         Escala escala = encontrar(escalaId);
 
@@ -241,12 +261,13 @@ public class EscalaService {
         );
 
         itemEscalaRepository.save(item);
+        auditoria.registrar(escala,item,"TROCA_DIRETA","Plantão atribuído a "+bombeiro.getNomeCompleto()+".",atorEmail);
 
         return response(escala);
     }
 
     @Transactional
-    public EscalaResponse publicar(Long id) {
+    public EscalaResponse publicar(Long id, String atorEmail) {
         Escala escala = encontrar(id);
         if (escala.getStatus() == StatusEscala.PUBLICADA) {
             throw new RegraNegocioException("A escala já está publicada.");
@@ -256,15 +277,28 @@ public class EscalaService {
                     "Resolva as vagas não preenchidas e os conflitos antes de publicar.");
         }
         escala.publicar();
+        auditoria.registrar(escala,null,"ESCALA_PUBLICADA","Escala publicada.",atorEmail);
         return response(escala);
     }
 
     @Transactional
-    public void excluir(Long id) {
+    public EscalaResponse cancelarTurno(Long escalaId,Long itemId,String motivo,String atorEmail) {
+        Escala escala=encontrar(escalaId);
+        ItemEscala item=itemEscalaRepository.findByIdAndEscalaId(itemId,escalaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Plantão não encontrado nesta escala."));
+        if(item.isCancelado()) throw new RegraNegocioException("Este plantão já está cancelado.");
+        item.cancelar(motivo.trim());
+        solicitacoesTroca.findByItemEscalaIdAndStatusIn(itemId,
+                List.of(StatusTroca.AGUARDANDO_ACEITE,StatusTroca.AGUARDANDO_APROVACAO))
+                .forEach(troca -> troca.alterarStatus(StatusTroca.CANCELADA));
+        auditoria.registrar(escala,item,"TURNO_CANCELADO","Plantão de "+item.getBombeiro().getNomeCompleto()+" cancelado: "+motivo.trim(),atorEmail);
+        return response(escala);
+    }
+
+    @Transactional
+    public void excluir(Long id, String atorEmail) {
         Escala escala = encontrar(id);
-        if (escala.getStatus() == StatusEscala.PUBLICADA) {
-            throw new RegraNegocioException("Uma escala publicada não pode ser excluída.");
-        }
+        auditoria.registrar(escala,null,"ESCALA_EXCLUIDA","Escala excluída permanentemente.",atorEmail);
         escalaRepository.delete(escala);
     }
 
@@ -347,11 +381,25 @@ public class EscalaService {
                 .map(i -> new ItemEscalaResponse(i.getId(), i.getBombeiro().getId(),
                 i.getBombeiro().getNomeCompleto(), i.getInicioPlantao(),
                 i.getFimPlantao(),
-                i.isConflito(), i.getObservacao()))
+                i.isConflito(), i.getObservacao(), i.isCancelado(), i.getMotivoCancelamento()))
                 .toList();
         return new EscalaResponse(escala.getId(), escala.getNome(), escala.getDataInicio(),
                 escala.getDataFim(), escala.getStatus(), escala.getCriadaEm(), itens.size(),
                 totalAlertas(escala), itens);
+    }
+
+    private EscalaResponse responseSomenteDoBombeiro(Escala escala, Long bombeiroId) {
+        List<ItemEscalaResponse> itens = escala.getItens().stream()
+                .filter(item -> item.getBombeiro().getId().equals(bombeiroId))
+                .sorted(Comparator.comparing(ItemEscala::getInicioPlantao))
+                .map(i -> new ItemEscalaResponse(i.getId(), i.getBombeiro().getId(),
+                        i.getBombeiro().getNomeCompleto(), i.getInicioPlantao(),
+                        i.getFimPlantao(), i.isConflito(), i.getObservacao(),
+                        i.isCancelado(), i.getMotivoCancelamento()))
+                .toList();
+        return new EscalaResponse(escala.getId(), escala.getNome(), escala.getDataInicio(),
+                escala.getDataFim(), escala.getStatus(), escala.getCriadaEm(), itens.size(),
+                (int) itens.stream().filter(ItemEscalaResponse::conflito).count(), itens);
     }
 
     private record Candidato(Bombeiro bombeiro, boolean conflito) {

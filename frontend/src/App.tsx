@@ -4,6 +4,7 @@ import api from "./api/api";
 import "./App.css";
 import { useEffect } from "react";
 import Dashboard from "./components/Dashboard";
+import PortalBombeiro from "./components/PortalBombeiro";
 
 interface LoginResponse {
   token: string;
@@ -11,7 +12,8 @@ interface LoginResponse {
   usuarioId: number;
   nome: string;
   email: string;
-  perfil: "ADMIN" | "GESTOR";
+  perfil: "ADMIN" | "GESTOR" | "BOMBEIRO";
+  bombeiroId: number | null;
 }
 
 function App() {
@@ -84,6 +86,9 @@ function App() {
   }
 
   if (usuario) {
+    if (usuario.perfil === "BOMBEIRO") {
+      return <PortalBombeiro usuario={usuario} aoSair={sair} />;
+    }
     return <Dashboard usuario={usuario} aoSair={sair} />;
   }
 
